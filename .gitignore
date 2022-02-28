@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 
 ESC-50/
+room_sounds/
+source_room_sounds/
+*.pt
