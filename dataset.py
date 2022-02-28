@@ -254,7 +254,7 @@ class SoundDS(Dataset):
         if "timeShift" in self.augmentations:
             loaded_file = AudioUtil.augment_timeShift(loaded_file,1.0,idx*self.bootstrapSeed)
         if "noise" in self.augmentations:
-            loaded_file = AudioUtil.augment_timeNoise(loaded_file,0.0000)
+            loaded_file = AudioUtil.augment_timeNoise(loaded_file,0.0005)
         if "lowPass" in self.augmentations:
             loaded_file = AudioUtil.augment_timeLowPass(loaded_file,5000)
         
