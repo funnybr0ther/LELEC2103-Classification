@@ -2,11 +2,10 @@ import torch
 import torch.nn.functional as F
 from torch.nn import init
 import torch.nn as nn
+import numpy as np
+import dataset
 
 
-# ----------------------------
-# Audio Classification Model
-# ----------------------------
 class AudioClassifier (nn.Module):
     # ----------------------------
     # Build the model architecture
@@ -71,14 +70,7 @@ class AudioClassifier (nn.Module):
         # Final output
         return x
 
-# Create the model and put it on the GPU if available
-myModel = AudioClassifier()
 device = torch.device("cpu")
-myModel = myModel.to(device)
-# Check that it is on Cuda
-next(myModel.parameters()).device
-
-
 # ----------------------------
 # Training Loop
 # ----------------------------
@@ -102,8 +94,8 @@ def training(model, train_dl, num_epochs):
         # Get the input features and target labels, and put them on the GPU
         inputs, labels = data[0].to(device), data[1].to(device)
         # Normalize the inputs
-        inputs_m, inputs_s = inputs.mean(), inputs.std()
-        inputs = (inputs - inputs_m) / inputs_s
+        # inputs_m, inputs_s = inputs.mean(), inputs.std()
+        # inputs = (inputs - inputs_m) / inputs_s
 
         # Zero the parameter gradients
         optimizer.zero_grad()
@@ -149,8 +141,8 @@ def inference (model, val_dl):
       # Get the input features and target labels, and put them on the GPU
       inputs, labels = data[0].to(device), data[1].to(device)
       # Normalize the inputs
-      inputs_m, inputs_s = inputs.mean(), inputs.std()
-      inputs = (inputs - inputs_m) / inputs_s
+      # inputs_m, inputs_s = inputs.mean(), inputs.std()
+      # inputs = (inputs - inputs_m) / inputs_s
 
       # Get predictions
       outputs = model(inputs)
@@ -163,3 +155,31 @@ def inference (model, val_dl):
     
   acc = correct_prediction/total_prediction
   print(f'Accuracy: {acc:.2f}, Total items: {total_prediction}')
+
+def loadModel(name):
+  myModel = AudioClassifier()
+  myModel.load_state_dict(torch.load(name))
+  myModel = myModel.to(device)
+  # Check that it is on Cuda
+  next(myModel.parameters()).device
+  return myModel
+
+
+def predict(fv,ds,model):
+  with torch.no_grad():
+    inputs = torch.Tensor(16,1,20,10)
+    labels = torch.Tensor(16)
+    for j in range(1,16):
+        index = np.random.randint(0,len(ds))
+        inputs[j], labels[j] = ds[index]
+        # dataset.AudioUtil.displayMelspec(inputs[j],ds.getAudio(index))
+
+    inputs[0] = torch.from_numpy(fv)
+    # dataset.AudioUtil.displayMelspec(inputs[0])
+
+    # input_m, input_s = inputs.mean(), inputs.std()
+    # inputs = (inputs - input_m) / input_s
+    output = model(inputs)
+    _, prediction = torch.max(output,1)
+    return prediction[0]
+  

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torchaudio
 import sounddevice as sd
+import torch
 
 from torch.utils.data import DataLoader, Dataset, random_split
 from os import walk
@@ -47,16 +48,22 @@ class AudioUtil:
             sig = sig[:,:truncate_to*n_fft]
         
         melspec = transforms.MelSpectrogram(sample_rate = sr,n_fft=n_fft,hop_length=n_fft,n_mels=n_mels,center=False)(sig)
-        melspec = transforms.AmplitudeToDB()(melspec)
+        # melspec = transforms.AmplitudeToDB()(melspec)
+        melspec = torch.abs(melspec)
+        if melspec.max() != 0:
+            melspec = melspec / melspec.max()
         return melspec
     
     @staticmethod
-    def displayMelspec(melspec, aud):
-        sig,sr = aud
-        num_channels,num_samples = sig.shape
+    def displayMelspec(melspec, aud=None):
+        if aud != None:
+            sig,sr = aud
+            num_channels,num_samples = sig.shape
 
-        tmax = num_samples/sr
+            tmax = num_samples/sr
 
+        else:
+            tmax = 0.5
         t = np.linspace(0,tmax,5)
         
         plt.imshow(melspec.numpy()[0], interpolation='nearest', origin="lower",aspect="auto")
@@ -222,7 +229,7 @@ class SoundDS(Dataset):
 
         melSpecGram = AudioUtil.toMelSpec(loaded_file,self.windowSize,20,0)
 
-        melSpecGram = AudioUtil.normalize_specgram(melSpecGram)
+        # melSpecGram = AudioUtil.normalize_specgram(melSpecGram)
         # if "mask" in self.augmentations:
             # melSpecGram = AudioUtil.augment_spectralMask(melSpecGram,0.1,1,1)
         if(idx >= len(self.df)*self.samplesPerFile):
@@ -254,9 +261,9 @@ class SoundDS(Dataset):
         if "timeShift" in self.augmentations:
             loaded_file = AudioUtil.augment_timeShift(loaded_file,1.0,idx*self.bootstrapSeed)
         if "noise" in self.augmentations:
-            loaded_file = AudioUtil.augment_timeNoise(loaded_file,0.0005)
-        if "lowPass" in self.augmentations:
-            loaded_file = AudioUtil.augment_timeLowPass(loaded_file,5000)
+            loaded_file = AudioUtil.augment_timeNoise(loaded_file,0.0000)
+        # if "lowPass" in self.augmentations:
+        #     loaded_file = AudioUtil.augment_timeLowPass(loaded_file,5000)
         
         return loaded_file
 
