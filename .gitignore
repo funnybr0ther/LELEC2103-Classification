@@ -134,4 +134,7 @@ source_room_sounds/
 *.pt
 
 pylibs/
-scripts/
+scripts/measurements
+mcu_training
+*.txt
+*.png
